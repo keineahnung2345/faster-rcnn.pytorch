@@ -102,7 +102,10 @@ class _fasterRCNN(nn.Module):
 
         if self.training:
             # classification loss
-            RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
+            rois_label_onehot = torch.cuda.FloatTensor(rois_label.shape[0], self.n_classes)
+            rois_label_onehot.zero_()
+            rois_label_onehot.scatter_(1, rois_label.long().view(-1, 1), 1)
+            RCNN_loss_cls = F.binary_cross_entropy(F.sigmoid(cls_score), rois_label_onehot)
 
             # bounding box regression L1 loss
             RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
